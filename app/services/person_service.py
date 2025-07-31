@@ -321,16 +321,20 @@ class PersonService:
 
             avg_confidence = 0.0
             last_photo_date = None
+            preview_photo = None
 
             if active_photos:
                 avg_confidence = sum(p.confidence for p in active_photos) / active_count
                 last_photo_date = max(p.created_at for p in active_photos)
+                first_photo = min(active_photos, key=lambda p: p.created_at)
+                preview_photo = first_photo.file_path
 
             return {
                 'total_photos': total_photos,
                 'active_photos': active_count,
                 'avg_confidence': avg_confidence,
-                'last_photo_date': last_photo_date
+                'last_photo_date': last_photo_date,
+                'preview_photo': preview_photo
             }
 
         except Exception as e:
@@ -339,7 +343,8 @@ class PersonService:
                 'total_photos': 0,
                 'active_photos': 0,
                 'avg_confidence': 0.0,
-                'last_photo_date': None
+                'last_photo_date': None,
+                'preview_photo': None
             }
 
 
