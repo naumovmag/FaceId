@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 import structlog
 from pathlib import Path
@@ -50,11 +51,19 @@ async def upload_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/identify", response_class=HTMLResponse)
-async def identify_page(request: Request):
+async def identify_page(request: Request, db: Session = Depends(get_db)):
     """Страница идентификации"""
+    try:
+        persons = person_service.get_all_persons(db, limit=1000)
+        persons_data = jsonable_encoder(persons)
+    except Exception as e:
+        logger.error("Failed to load persons for identify page", error=str(e))
+        persons_data = []
+
     return templates.TemplateResponse("identify.html", {
         "request": request,
         "title": "Идентификация лица",
+        "persons": persons_data,
         "page": "identify"
     })
 
