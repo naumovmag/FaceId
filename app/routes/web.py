@@ -100,7 +100,7 @@ async def persons_list_page(
 
         return templates.TemplateResponse("persons_list.html", {
             "request": request,
-            "title": "Список людей",
+            "title": "Список",
             "persons": persons_with_stats,
             "pagination": {
                 'page': page,
