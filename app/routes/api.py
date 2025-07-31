@@ -5,6 +5,7 @@ from typing import List, Optional
 import structlog
 
 from app.config.database import get_db
+from app.config.settings import settings
 from app.models.person import (
     Person, PersonCreate, PersonUpdate, PersonWithPhotos,
     IdentificationResult, PersonStats
@@ -13,8 +14,7 @@ from app.services.person_service import person_service
 from app.services.face_service import face_service
 from app.services.file_service import file_service
 from app.utils.validators import (
-    validate_upload_request, validate_identification_request,
-    PersonValidator, FaceRecognitionValidator
+    validate_upload_request, validate_identification_request, PersonValidator
 )
 from app.utils.exceptions import (
     FileValidationError, FileStorageError, FaceDetectionError,
@@ -369,7 +369,7 @@ async def get_system_stats(db: Session = Depends(get_db)):
             "active_photos": active_photos,
             "inactive_photos": inactive_photos,
             "avg_confidence": avg_confidence,
-            "face_recognition_threshold": face_service.settings.face_recognition_threshold
+            "face_recognition_threshold": settings.face_recognition_threshold
         }
 
     except Exception as e:
