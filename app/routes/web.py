@@ -50,12 +50,19 @@ async def upload_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/identify", response_class=HTMLResponse)
-async def identify_page(request: Request):
+async def identify_page(request: Request, db: Session = Depends(get_db)):
     """Страница идентификации"""
+    try:
+        persons = person_service.get_all_persons(db, limit=1000)
+    except Exception as e:
+        logger.error("Failed to load persons for identify page", error=str(e))
+        persons = []
+
     return templates.TemplateResponse("identify.html", {
         "request": request,
         "title": "Идентификация лица",
-        "page": "identify"
+        "page": "identify",
+        "persons": persons
     })
 
 
