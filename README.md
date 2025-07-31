@@ -289,7 +289,6 @@ face_recognition_app/
 ├── 📁 models_cache/           # Кэш моделей InsightFace
 ├── 📄 requirements.txt        # Python зависимости
 ├── 📄 .env.example            # Пример файла настроек
-├── 📄 .env                    # Настройки окружения (создается из .env.example)
 ├── 📄 run.py                  # Скрипт запуска
 ├── 📄 face_recognition.db     # База данных SQLite (создается автоматически)
 └── 📄 README.md               # Документация
