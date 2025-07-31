@@ -7,6 +7,7 @@ import structlog
 
 from app.config.database import get_db
 from app.services.person_service import person_service
+from app.models.person import PersonStats
 
 logger = structlog.get_logger()
 
@@ -91,10 +92,10 @@ async def persons_list_page(
         # Получаем статистику для каждого человека
         persons_with_stats = []
         for person in persons:
-            stats = person_service.get_person_stats(db, person.id)
+            stats_data = person_service.get_person_stats(db, person.id)
             persons_with_stats.append({
                 'person': person,
-                'stats': stats
+                'stats': PersonStats(**stats_data)
             })
 
         return templates.TemplateResponse("persons_list.html", {

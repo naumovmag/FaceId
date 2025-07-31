@@ -35,10 +35,15 @@
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
+                            {% if item.stats.preview_photo %}
+                            <img src="/uploads/{{ item.stats.preview_photo }}" alt="{{ item.person.name }}"
+                                 class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
                             <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
                                  style="width: 50px; height: 50px;">
                                 <i class="bi bi-person-fill text-white"></i>
                             </div>
+                            {% endif %}
                             <div>
                                 <h5 class="card-title mb-1">{{ item.person.name }}</h5>
                                 <small class="text-muted">ID: {{ item.person.id }}</small>
