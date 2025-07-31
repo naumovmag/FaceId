@@ -77,3 +77,5 @@ class PersonStats(BaseModel):
     active_photos: int
     avg_confidence: float
     last_photo_date: Optional[datetime]
+    preview_photo: Optional[str] = None
+
