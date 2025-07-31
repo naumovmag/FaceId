@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Face Recognition System{% endblock %}
+
+{% block extra_head %}
+<style>
+    .photo-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .photo-item {
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: transform 0.2s ease;
+    }
+
+    .photo-item:hover {
+        transform: scale(1.02);
+    }
+
+    .photo-item img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .photo-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        color: white;
+        padding: 1rem;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .photo-item:hover .photo-overlay {
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        {% if person %}
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="display-5 mb-2">
+                    <i class="bi bi-person-circle text-primary me-2"></i>
+                    {{ person.name }}
+                </h1>
+                <p class="text-muted mb-0">ID: {{ person.id }} | Создан: {{ person.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/upload?person_id={{ person.id }}" class="btn btn-primary">
+                    <i class="bi bi-upload me-2"></i>Добавить фото
+                </a>
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal">
+                    <i class="bi bi-pencil me-2"></i>Редактировать
+                </button>
+                <button class="btn btn-outline-danger" onclick="deletePerson()">
+                    <i class="bi bi-trash me-2"></i>Удалить
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-images display-4 mb-2"></i>
+                        <h3 class="mb-0">{{ stats.active_photos }}</h3>
+                        <p class="mb-0">Активных фото</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-graph-up display-4 mb-2"></i>
+                        <h3 class="mb-0">{{ "%.1f"|format(stats.avg_confidence * 100) }}%</h3>
+                        <p class="mb-0">Средняя точность</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-collection display-4 mb-2"></i>
+                        <h3 class="mb-0">{{ stats.total_photos }}</h3>
+                        <p class="mb-0">Всего фото</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-date display-4 mb-2"></i>
+                        <h3 class="mb-0">
+                            {% if stats.last_photo_date %}
+                            {{ stats.last_photo_date.strftime('%d.%m') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </h3>
+                        <p class="mb-0">Последнее фото</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-images me-2"></i>Фотографии ({{ person.photos|length }})</h5>
+                {% if person.photos %}
+                <small class="text-muted">Наведите на фото для подробностей</small>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if person.photos %}
+                <div class="photo-gallery">
+                    {% for photo in person.photos %}
+                    <div class="photo-item">
+                        <img src="/uploads/{{ photo.file_path }}" alt="Фото {{ person.name }}" loading="lazy">
+                        <div class="photo-overlay">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="d-block">{{ photo.filename }}</small>
+                                    <small class="d-block">Точность: {{ "%.1f"|format(photo.confidence * 100) }}%</small>
+                                    <small class="d-block">{{ photo.created_at.strftime('%d.%m.%Y') }}</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-light"
+                                        onclick="deletePhoto({{ photo.id }}, '{{ photo.filename }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-images display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted mb-3">Фотографии не найдены</h4>
+                    <p class="text-muted mb-4">Добавьте фотографии для обучения системы распознавания</p>
+                    <a href="/upload?person_id={{ person.id }}" class="btn btn-primary">
+                        <i class="bi bi-upload me-2"></i>Загрузить первое фото
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать информацию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <div class="mb-3">
+                        <label for="personName" class="form-label">Имя:</label>
+                        <input type="text" class="form-control" id="personName" name="name"
+                               value="{{ person.name if person else '' }}" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="savePerson()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить человека <strong>{{ person.name if person else '' }}</strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить. Все фотографии будут также удалены.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Photo Modal -->
+<div class="modal fade" id="deletePhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления фото</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить фотографию <strong id="deletePhotoName"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeletePhoto">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let photoToDelete = null;
+
+async function savePerson() {
+    const name = document.getElementById('personName').value.trim();
+    if (!name) {
+        alert('Пожалуйста, введите имя');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/persons/{{ person.id if person else 0 }}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const result = await response.json();
+            alert('Ошибка: ' + (result.detail?.error || 'Не удалось сохранить'));
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+function deletePerson() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+async function confirmDelete() {
+    try {
+        const response = await fetch(`/api/persons/{{ person.id if person else 0 }}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            window.location.href = '/persons';
+        } else {
+            const result = await response.json();
+            alert('Ошибка: ' + (result.detail?.error || 'Не удалось удалить'));
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+function deletePhoto(photoId, photoName) {
+    photoToDelete = photoId;
+    document.getElementById('deletePhotoName').textContent = photoName;
+    const modal = new bootstrap.Modal(document.getElementById('deletePhotoModal'));
+    modal.show();
+}
+
+document.getElementById('confirmDeletePhoto').addEventListener('click', async function() {
+    if (!photoToDelete) return;
+
+    try {
+        const response = await fetch(`/api/photos/${photoToDelete}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const result = await response.json();
+            alert('Ошибка: ' + (result.detail?.error || 'Не удалось удалить'));
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

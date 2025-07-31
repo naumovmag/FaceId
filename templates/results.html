@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Face Recognition System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 mb-3">
+                <i class="bi bi-clipboard-check text-primary me-2"></i>
+                Результаты идентификации
+            </h1>
+        </div>
+
+        {% if result %}
+        <!-- Successful Match -->
+        <div class="card shadow border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-check me-2"></i>
+                    Человек успешно идентифицирован!
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-person-circle display-1 text-success mb-3"></i>
+                        <h3 class="text-success">{{ result.person.name }}</h3>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted mb-1">Сходство</h6>
+                                    <div class="h4 text-success mb-0">
+                                        {{ "%.1f"|format(result.similarity * 100) }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted mb-1">Уверенность</h6>
+                                    <div class="h4 text-info mb-0">
+                                        {{ "%.1f"|format(result.confidence * 100) }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted mb-1">ID человека</h6>
+                                    <div class="h4 text-secondary mb-0">
+                                        #{{ result.person.id }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted mb-1">Дата создания</h6>
+                                    <div class="h6 text-secondary mb-0">
+                                        {{ result.person.created_at.strftime('%d.%m.%Y') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Person Stats -->
+                <hr class="my-4">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <div class="h5 mb-0 text-primary">{{ result.stats.active_photos }}</div>
+                            <small class="text-muted">Фотографий</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <div class="h5 mb-0 text-success">{{ "%.1f"|format(result.stats.avg_confidence * 100) }}%</div>
+                            <small class="text-muted">Средняя точность</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <div class="h5 mb-0 text-info">{{ result.stats.total_photos }}</div>
+                            <small class="text-muted">Всего фото</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h5 mb-0 text-warning">
+                            {% if result.stats.last_photo_date %}
+                            {{ result.stats.last_photo_date.strftime('%d.%m') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">Последнее фото</small>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <hr class="my-4">
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/persons/{{ result.person.id }}" class="btn btn-primary">
+                        <i class="bi bi-person me-2"></i>Просмотреть профиль
+                    </a>
+                    <a href="/upload?person_id={{ result.person.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-upload me-2"></i>Добавить фото
+                    </a>
+                    <a href="/identify" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Новая идентификация
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% elif not is_match %}
+        <!-- No Match -->
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-x me-2"></i>
+                    Человек не найден
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <i class="bi bi-search display-1 text-danger mb-4"></i>
+                <h4 class="text-danger mb-3">Совпадений не найдено</h4>
+                <p class="lead text-muted mb-4">
+                    Лицо успешно распознано, но совпадений в базе данных не обнаружено.
+                </p>
+
+                <div class="row justify-content-center mb-4">
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <h6 class="text-muted mb-1">Уверенность детекции</h6>
+                            <div class="h4 text-info mb-0">
+                                {{ "%.1f"|format(confidence|float * 100) }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/upload" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Добавить в базу данных
+                    </a>
+                    <a href="/persons" class="btn btn-outline-primary">
+                        <i class="bi bi-people me-2"></i>
+                        Просмотреть всех людей
+                    </a>
+                    <a href="/identify" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Попробовать снова
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Error State -->
+        <div class="card shadow border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Ошибка обработки
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle display-1 text-warning mb-4"></i>
+                <h4 class="text-warning mb-3">Не удалось обработать изображение</h4>
+                <p class="text-muted mb-4">
+                    Возможно, на изображении отсутствует лицо или качество изображения недостаточное.
+                </p>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/identify" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Попробовать другое фото
+                    </a>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-2"></i>
+                        На главную
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tips -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    {% if result %}
+                    Что дальше?
+                    {% else %}
+                    Советы для улучшения результатов
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if result %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Улучшение точности:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-plus-circle text-success me-2"></i>
+                                Добавьте больше фотографий этого человека
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-camera text-info me-2"></i>
+                                Используйте фото с разных ракурсов
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Дальнейшие действия:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-eye text-primary me-2"></i>
+                                Просмотрите профиль человека
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-search text-secondary me-2"></i>
+                                Протестируйте с другими фото
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {% else %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Качество изображения:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Хорошее освещение
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Четкое изображение
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Лицо занимает достаточную площадь
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Рекомендации:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-camera text-info me-2"></i>
+                                Попробуйте другое фото
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-people text-primary me-2"></i>
+                                Проверьте базу данных людей
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-plus text-success me-2"></i>
+                                Добавьте человека в систему
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

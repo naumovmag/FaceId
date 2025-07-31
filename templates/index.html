@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Face Recognition System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Hero Section -->
+        <div class="card text-center shadow-lg mb-5">
+            <div class="card-body py-5">
+                <i class="bi bi-person-badge display-1 text-primary mb-3"></i>
+                <h1 class="card-title display-4 mb-3">Face Recognition System</h1>
+                <p class="card-text lead text-muted mb-4">
+                    Современная система распознавания лиц на основе технологий InsightFace и FastAPI
+                </p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="/identify" class="btn btn-primary btn-lg me-md-2">
+                        <i class="bi bi-search me-2"></i>Начать идентификацию
+                    </a>
+                    <a href="/upload" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-upload me-2"></i>Загрузить фото
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-lightning-charge-fill display-4 text-warning mb-3"></i>
+                        <h5 class="card-title">Высокая точность</h5>
+                        <p class="card-text">
+                            Использование модели InsightFace buffalo_l обеспечивает точность распознавания более 99%
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-clock-fill display-4 text-success mb-3"></i>
+                        <h5 class="card-title">Быстрая обработка</h5>
+                        <p class="card-text">
+                            Оптимизированные алгоритмы обеспечивают быструю обработку изображений
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-shield-check-fill display-4 text-info mb-3"></i>
+                        <h5 class="card-title">Безопасность</h5>
+                        <p class="card-text">
+                            Все данные хранятся локально, обеспечивая полную конфиденциальность
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-gear-fill display-4 text-secondary mb-3"></i>
+                        <h5 class="card-title">Простота использования</h5>
+                        <p class="card-text">
+                            Интуитивно понятный интерфейс для управления людьми и фотографиями
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Start -->
+        <div class="card mt-5">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-rocket me-2"></i>Быстрый старт</h5>
+            </div>
+            <div class="card-body">
+                <ol class="list-group list-group-numbered list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Добавьте людей</div>
+                            Создайте профили людей в системе
+                        </div>
+                        <a href="/persons" class="btn btn-sm btn-outline-primary">Перейти</a>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Загрузите фотографии</div>
+                            Добавьте фотографии для каждого человека
+                        </div>
+                        <a href="/upload" class="btn btn-sm btn-outline-primary">Перейти</a>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Начните идентификацию</div>
+                            Загрузите фото для распознавания
+                        </div>
+                        <a href="/identify" class="btn btn-sm btn-outline-primary">Перейти</a>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Face Recognition System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="display-5 mb-2">
+                    <i class="bi bi-people text-primary me-2"></i>
+                    Список людей
+                </h1>
+                <p class="lead text-muted mb-0">
+                    Управление зарегистрированными людьми в системе
+                </p>
+            </div>
+            <a href="/upload" class="btn btn-primary">
+                <i class="bi bi-person-plus me-2"></i>Добавить человека
+            </a>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        {% if persons %}
+        <!-- Persons Grid -->
+        <div class="row g-4">
+            {% for item in persons %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="bi bi-person-fill text-white"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">{{ item.person.name }}</h5>
+                                <small class="text-muted">ID: {{ item.person.id }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <div class="h5 mb-0 text-primary">{{ item.stats.active_photos }}</div>
+                                    <small class="text-muted">Фото</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <div class="h5 mb-0 text-success">{{ "%.1f"|format(item.stats.avg_confidence * 100) }}%</div>
+                                    <small class="text-muted">Точность</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 mb-0 text-info">
+                                    {% if item.stats.last_photo_date %}
+                                    {{ item.stats.last_photo_date.strftime('%d.%m') }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">Посл. фото</small>
+                            </div>
+                        </div>
+
+                        <!-- Created date -->
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                Создан: {{ item.person.created_at.strftime('%d.%m.%Y') }}
+                            </small>
+                        </p>
+                    </div>
+
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2">
+                            <a href="/persons/{{ item.person.id }}" class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="bi bi-eye me-1"></i>Просмотр
+                            </a>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    onclick="deletePerson({{ item.person.id }}, '{{ item.person.name }}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.prev_page }}">
+                        <i class="bi bi-chevron-left"></i> Предыдущая
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">Страница {{ pagination.page }}</span>
+                </li>
+
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.next_page }}">
+                        Следующая <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="bi bi-people display-1 text-muted mb-3"></i>
+            <h3 class="text-muted mb-3">Люди не найдены</h3>
+            <p class="text-muted mb-4">Начните с добавления первого человека в систему</p>
+            <a href="/upload" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-plus me-2"></i>Добавить первого человека
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить человека <strong id="deletePersonName"></strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Это действие нельзя отменить. Все фотографии будут также удалены.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let personToDelete = null;
+
+function deletePerson(personId, personName) {
+    personToDelete = personId;
+    document.getElementById('deletePersonName').textContent = personName;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+document.getElementById('confirmDelete').addEventListener('click', async function() {
+    if (!personToDelete) return;
+
+    try {
+        const response = await fetch(`/api/persons/${personToDelete}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const result = await response.json();
+            alert('Ошибка: ' + (result.detail?.error || 'Не удалось удалить'));
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

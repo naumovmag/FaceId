@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Face Recognition System{% endblock %}
+
+{% block extra_head %}
+<style>
+    .drop-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 3rem;
+        margin: 1rem 0;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .preview-container {
+        max-width: 300px;
+        margin: 1rem auto;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 mb-3">
+                <i class="bi bi-upload text-primary me-2"></i>
+                Загрузка фотографий
+            </h1>
+            <p class="lead text-muted">
+                Добавьте фотографии к профилям людей для обучения системы распознавания
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Upload Form -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Загрузить фотографию</h5>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <!-- Person Selection -->
+                    <div class="mb-3">
+                        <label for="personSelect" class="form-label">Выберите человека:</label>
+                        <div class="input-group">
+                            <select class="form-select" id="personSelect" name="person_id" required>
+                                <option value="">-- Выберите человека --</option>
+                                {% for person in persons %}
+                                <option value="{{ person.id }}">{{ person.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addPersonModal">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Или создайте нового человека, нажав кнопку "+"</div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">Выберите фотографию:</label>
+                        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-cloud-upload display-1 text-muted mb-3"></i>
+                            <p class="mb-2">Нажмите для выбора файла или перетащите изображение сюда</p>
+                            <small class="text-muted">Поддерживаются форматы: JPG, JPEG, PNG (макс. 10MB)</small>
+                        </div>
+                        <input type="file" class="form-control d-none" id="fileInput" name="file"
+                               accept="image/jpeg,image/jpg,image/png" required>
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="previewContainer" class="preview-container d-none">
+                        <img id="previewImage" class="preview-image" alt="Предварительный просмотр">
+                        <div class="text-center mt-2">
+                            <small class="text-muted" id="fileInfo"></small>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="bi bi-upload me-2"></i>
+                            Загрузить фотографию
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Uploads -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Последние загрузки</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentUploads">
+                    <p class="text-muted text-center">Загрузите первую фотографию для отображения истории</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Person Modal -->
+<div class="modal fade" id="addPersonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить нового человека</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPersonForm">
+                    <div class="mb-3">
+                        <label for="personName" class="form-label">Имя:</label>
+                        <input type="text" class="form-control" id="personName" name="name"
+                               placeholder="Введите имя человека" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="savePerson">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="successToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong class="me-auto">Успешно</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastBody"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.querySelector('.drop-zone');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const fileInfo = document.getElementById('fileInfo');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileSelect);
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
+
+    // Form submit handler
+    uploadForm.addEventListener('submit', handleFormSubmit);
+
+    // Add person form handler
+    document.getElementById('savePerson').addEventListener('click', handleAddPerson);
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            showPreview(file);
+        }
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            showPreview(files[0]);
+        }
+    }
+
+    function showPreview(file) {
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('d-none');
+
+                // Show file info
+                const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                fileInfo.textContent = `${file.name} (${sizeInMB} MB)`;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const formData = new FormData(uploadForm);
+        const personId = formData.get('person_id');
+
+        if (!personId) {
+            alert('Пожалуйста, выберите человека');
+            return;
+        }
+
+        // Show loading state
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Загрузка...';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/persons/${personId}/photos`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Фотография успешно загружена!');
+                uploadForm.reset();
+                previewContainer.classList.add('d-none');
+                loadRecentUploads();
+            } else {
+                throw new Error(result.detail?.error || 'Ошибка загрузки');
+            }
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        } finally {
+            // Restore button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function handleAddPerson(e) {
+        const name = document.getElementById('personName').value.trim();
+        if (!name) {
+            alert('Пожалуйста, введите имя');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/persons', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Add to select
+                const option = new Option(result.name, result.id);
+                document.getElementById('personSelect').add(option);
+                document.getElementById('personSelect').value = result.id;
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addPersonModal'));
+                modal.hide();
+
+                // Clear form
+                document.getElementById('addPersonForm').reset();
+
+                showToast('Человек успешно добавлен!');
+            } else {
+                throw new Error(result.detail?.error || 'Ошибка создания');
+            }
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        }
+    }
+
+    function showToast(message) {
+        document.getElementById('toastBody').textContent = message;
+        const toast = new bootstrap.Toast(document.getElementById('successToast'));
+        toast.show();
+    }
+
+    async function loadRecentUploads() {
+        // This would load recent uploads from API
+        // For now, just show placeholder
+    }
+});
+</script>
+{% endblock %}
