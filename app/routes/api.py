@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import structlog
@@ -269,7 +270,7 @@ async def health_check(db: Session = Depends(get_db)):
             face_service.initialize()
 
         # Проверяем подключение к БД
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
 
         return {
             "status": "healthy",

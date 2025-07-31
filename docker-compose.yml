@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: face-recognition-app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Монтируем папки для сохранения данных
+      - ./uploads:/app/uploads
+      - ./models_cache:/app/models_cache
+      - ./face_recognition.db:/app/face_recognition.db
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - DEBUG=True
+      - SECRET_KEY=docker_secret_key_change_in_production
+      - DATABASE_URL=sqlite:///./face_recognition.db
+      - FACE_RECOGNITION_THRESHOLD=0.6
+      - MAX_UPLOAD_SIZE=10485760
+      - ALLOWED_EXTENSIONS=jpg,jpeg,png
+      - UPLOAD_PATH=/app/uploads
+      - MODELS_CACHE_PATH=/app/models_cache
+      - LOG_LEVEL=INFO
+      - OMP_NUM_THREADS=1
+      - ONNX_NUM_THREADS=1
+      - INSIGHTFACE_ROOT=/app/models_cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - face-recognition-network
+
+  # Nginx для статических файлов и прокси (опционально)
+  nginx:
+    image: nginx:alpine
+    container_name: face-recognition-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/var/www/static:ro
+      - ./uploads:/var/www/uploads:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - face-recognition-network
+
+networks:
+  face-recognition-network:
+    driver: bridge
+
+volumes:
+  # Именованные тома для постоянного хранения
+  uploads_data:
+  models_cache_data:
+  db_data:

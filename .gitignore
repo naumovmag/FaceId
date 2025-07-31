@@ -261,12 +261,6 @@ temp/
 *.p12
 *.pfx
 
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*.yml
-.docker/
-
 # Kubernetes
 k8s/
 *.yaml
