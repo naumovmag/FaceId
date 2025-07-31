@@ -211,7 +211,10 @@ async def deactivate_photo(photo_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/identify", response_model=IdentificationResult)
-async def identify_person(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def identify_person(
+        file: UploadFile = File(...),
+        person_id: Optional[int] = Form(None),
+        db: Session = Depends(get_db)):
     """Идентифицировать человека по фотографии"""
     try:
         # Читаем файл
@@ -233,8 +236,28 @@ async def identify_person(file: UploadFile = File(...), db: Session = Depends(ge
             if not image_validation['is_valid']:
                 raise ValidationError('; '.join(image_validation['errors']))
 
-            # Выполняем идентификацию
-            result = person_service.identify_person(db, file_info['file_path'])
+            # Выполняем идентификацию и получаем эмбеддинг
+            result, embedding = person_service.identify_person(db, file_info['file_path'])
+
+            # Определяем ID человека для сохранения
+            target_person_id = result.person_id if result.is_match else person_id
+
+            if target_person_id:
+                # Сохраняем файл в постоянное хранилище
+                saved_file = await file_service.save_uploaded_file(
+                    file_data, file.filename, person_id=target_person_id
+                )
+
+                # Сохраняем фото и эмбеддинг в БД
+                person_service.add_photo_to_person(
+                    db=db,
+                    person_id=target_person_id,
+                    filename=saved_file['filename'],
+                    file_path=saved_file['relative_path'],
+                    embedding_vector=embedding.tolist(),
+                    confidence=result.confidence
+                )
+
             return result
 
         finally:

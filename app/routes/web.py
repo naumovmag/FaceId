@@ -50,12 +50,21 @@ async def upload_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/identify", response_class=HTMLResponse)
-async def identify_page(request: Request):
+async def identify_page(request: Request, db: Session = Depends(get_db)):
     """Страница идентификации"""
+    try:
+        persons = person_service.get_all_persons(db, limit=1000)
+        # Convert Pydantic models to simple dicts for JSON serialization in template
+        persons = [{"id": p.id, "name": p.name} for p in persons]
+    except Exception as e:
+        logger.error("Failed to load persons for identify page", error=str(e))
+        persons = []
+
     return templates.TemplateResponse("identify.html", {
         "request": request,
         "title": "Идентификация лица",
-        "page": "identify"
+        "page": "identify",
+        "persons": persons
     })
 
 
