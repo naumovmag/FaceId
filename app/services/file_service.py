@@ -68,8 +68,8 @@ class FileService:
                     info['errors'].append('Изображение слишком маленькое (минимум 50x50)')
                     info['is_valid'] = False
 
-                if img.width > 4000 or img.height > 4000:
-                    info['errors'].append('Изображение слишком большое (максимум 4000x4000)')
+                if img.width > 5000 or img.height > 5000:
+                    info['errors'].append('Изображение слишком большое (максимум 5000x5000)')
                     info['is_valid'] = False
 
                 if img.format not in ['JPEG', 'PNG']:

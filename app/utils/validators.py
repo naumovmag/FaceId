@@ -71,9 +71,9 @@ class FileValidator:
             result['errors'].append('Изображение слишком маленькое (минимум 50x50 пикселей)')
 
         # Максимальные размеры
-        if width > 4000 or height > 4000:
+        if width > 5000 or height > 5000:
             result['is_valid'] = False
-            result['errors'].append('Изображение слишком большое (максимум 4000x4000 пикселей)')
+            result['errors'].append('Изображение слишком большое (максимум 5000x5000 пикселей)')
 
         # Соотношение сторон
         if width > 0 and height > 0:
