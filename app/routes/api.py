@@ -242,6 +242,20 @@ async def identify_person(
             # Определяем ID человека для сохранения
             target_person_id = result.person_id if result.is_match else person_id
 
+            # Если лицо не распознано и пользователь не указал ID, создаем нового
+            if not target_person_id:
+                new_person = person_service.create_person(
+                    db, PersonCreate(name="Не задан")
+                )
+                target_person_id = new_person.id
+                result = IdentificationResult(
+                    person_id=new_person.id,
+                    person_name=new_person.name,
+                    confidence=result.confidence,
+                    similarity=1.0,
+                    is_match=True
+                )
+
             if target_person_id:
                 # Проверяем, не является ли загруженная фотография точной копией
                 is_duplicate = (
@@ -257,7 +271,7 @@ async def identify_person(
                     )
 
                     # Сохраняем фото и эмбеддинг в БД
-                    person_service.add_photo_to_person(
+                    photo = person_service.add_photo_to_person(
                         db=db,
                         person_id=target_person_id,
                         filename=saved_file['filename'],
@@ -265,6 +279,10 @@ async def identify_person(
                         embedding_vector=embedding.tolist(),
                         confidence=result.confidence
                     )
+
+                    # Добавляем ID сохранённого фото в результат, если ранее не было
+                    if result.photo_id is None and photo is not None:
+                        result.photo_id = photo.id
                 else:
                     logger.info(
                         "Duplicate photo detected, skipping save",
