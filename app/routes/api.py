@@ -243,20 +243,34 @@ async def identify_person(
             target_person_id = result.person_id if result.is_match else person_id
 
             if target_person_id:
-                # Сохраняем файл в постоянное хранилище
-                saved_file = await file_service.save_uploaded_file(
-                    file_data, file.filename, person_id=target_person_id
+                # Проверяем, не является ли загруженная фотография точной копией
+                is_duplicate = (
+                    result.is_match and
+                    result.photo_id is not None and
+                    result.similarity >= 1.0
                 )
 
-                # Сохраняем фото и эмбеддинг в БД
-                person_service.add_photo_to_person(
-                    db=db,
-                    person_id=target_person_id,
-                    filename=saved_file['filename'],
-                    file_path=saved_file['relative_path'],
-                    embedding_vector=embedding.tolist(),
-                    confidence=result.confidence
-                )
+                if not is_duplicate:
+                    # Сохраняем файл в постоянное хранилище
+                    saved_file = await file_service.save_uploaded_file(
+                        file_data, file.filename, person_id=target_person_id
+                    )
+
+                    # Сохраняем фото и эмбеддинг в БД
+                    person_service.add_photo_to_person(
+                        db=db,
+                        person_id=target_person_id,
+                        filename=saved_file['filename'],
+                        file_path=saved_file['relative_path'],
+                        embedding_vector=embedding.tolist(),
+                        confidence=result.confidence
+                    )
+                else:
+                    logger.info(
+                        "Duplicate photo detected, skipping save",
+                        person_id=target_person_id,
+                        photo_id=result.photo_id
+                    )
 
             return result
 
