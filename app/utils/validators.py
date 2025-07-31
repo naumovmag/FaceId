@@ -4,7 +4,6 @@ from pathlib import Path
 import mimetypes
 
 from app.config.settings import settings
-from app.utils.exceptions import ValidationError
 
 
 class FileValidator:

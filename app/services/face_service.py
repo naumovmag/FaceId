@@ -8,7 +8,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 
-from app.config.settings import settings  # Убедиться что эта строка есть
+from app.config.settings import settings
 from app.utils.exceptions import ModelInitializationError, FaceDetectionError
 
 logger = structlog.get_logger()
