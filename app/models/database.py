@@ -23,7 +23,7 @@ class Photo(Base):
     person_id = Column(Integer, ForeignKey("persons.id"), nullable=False)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
-    embedding_vector = Column(LargeBinary, nullable=True)  # Храним как BLOB
+    embedding_vector = Column(LargeBinary, nullable=True)
     confidence = Column(Float, default=0.0)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

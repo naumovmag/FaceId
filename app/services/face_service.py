@@ -6,7 +6,6 @@ import structlog
 from pathlib import Path
 import threading
 from concurrent.futures import ThreadPoolExecutor
-import asyncio
 
 from app.config.settings import settings  # Убедиться что эта строка есть
 from app.utils.exceptions import ModelInitializationError, FaceDetectionError
