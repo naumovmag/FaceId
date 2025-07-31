@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsContainer = document.getElementById('resultsContainer');
     const resultCard = document.getElementById('resultCard');
     const resultBody = document.getElementById('resultBody');
+    const persons = {{ persons | tojson }};
 
     // File input change handler
     fileInput.addEventListener('change', handleFileSelect);
@@ -276,6 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         } else {
             // No match
+            const options = persons.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
             resultCard.className = 'card shadow no-match-card';
             resultBody.innerHTML = `
                 <div class="row align-items-center">
@@ -286,9 +288,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h4 class="text-danger mb-3">Человек не найден</h4>
                         <p class="mb-2">Лицо распознано, но совпадений в базе данных не найдено.</p>
                         <p class="mb-3"><strong>Уверенность детекции:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                        <div class="mb-3">
+                            <label for="personSelect" class="form-label">Выбрать существующего человека:</label>
+                            <select id="personSelect" class="form-select mb-2">
+                                <option value="">-- Выберите --</option>
+                                ${options}
+                            </select>
+                            <button id="attachBtn" class="btn btn-success">
+                                <i class="bi bi-link-45deg me-2"></i>Привязать фото
+                            </button>
+                        </div>
                         <div class="d-flex gap-2">
                             <a href="/upload" class="btn btn-primary">
-                                <i class="bi bi-upload me-2"></i>Добавить в базу
+                                <i class="bi bi-upload me-2"></i>Добавить нового
                             </a>
                             <a href="/persons" class="btn btn-outline-secondary">
                                 <i class="bi bi-people me-2"></i>Просмотреть всех
@@ -297,10 +309,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
+
+            const attachBtn = document.getElementById('attachBtn');
+            attachBtn.addEventListener('click', attachToPerson);
         }
 
         resultsContainer.classList.remove('d-none');
         resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function attachToPerson() {
+        const personId = document.getElementById('personSelect').value;
+        if (!personId) {
+            alert('Пожалуйста, выберите человека');
+            return;
+        }
+
+        const formData = new FormData(identifyForm);
+        formData.append('person_id', personId);
+
+        try {
+            const response = await fetch('/api/identify', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Фото успешно добавлено к выбранному человеку');
+            } else {
+                throw new Error(result.detail?.error || 'Не удалось добавить фото');
+            }
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        }
     }
 });
 </script>

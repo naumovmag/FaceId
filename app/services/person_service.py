@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.orm import Session
 import structlog
 import numpy as np
@@ -231,8 +231,8 @@ class PersonService:
             logger.error("Failed to get active embeddings", error=str(e))
             raise DatabaseError(f"Не удалось получить эмбеддинги: {str(e)}")
 
-    def identify_person(self, db: Session, image_path: str) -> IdentificationResult:
-        """Идентифицировать человека по фотографии"""
+    def identify_person(self, db: Session, image_path: str) -> Tuple[IdentificationResult, np.ndarray]:
+        """Идентифицировать человека по фотографии и вернуть эмбеддинг"""
         try:
             logger.info("Starting person identification", image_path=image_path)
 
@@ -252,7 +252,7 @@ class PersonService:
                     confidence=detection_confidence,
                     similarity=0.0,
                     is_match=False
-                )
+                ), target_embedding
 
             logger.info("Found embeddings in database", count=len(all_embeddings))
 
@@ -271,7 +271,7 @@ class PersonService:
                     confidence=detection_confidence,
                     similarity=0.0,
                     is_match=False
-                )
+                ), target_embedding
 
             # Получаем информацию о найденном человеке
             best_photo_id, similarity = best_match
@@ -294,13 +294,13 @@ class PersonService:
                     similarity=similarity,
                     is_match=True,
                     photo_id=best_photo_id
-                )
+                ), target_embedding
 
             return IdentificationResult(
                 confidence=detection_confidence,
                 similarity=similarity,
                 is_match=False
-            )
+            ), target_embedding
 
         except Exception as e:
             logger.error("Failed to identify person", error=str(e), image_path=image_path)
@@ -308,7 +308,7 @@ class PersonService:
                 confidence=0.0,
                 similarity=0.0,
                 is_match=False
-            )
+            ), np.array([])
 
     def get_person_stats(self, db: Session, person_id: int) -> Dict[str, Any]:
         """Получить статистику по человеку"""
