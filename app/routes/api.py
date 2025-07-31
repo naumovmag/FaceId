@@ -347,7 +347,7 @@ async def health_check(db: Session = Depends(get_db)):
 async def get_system_stats(db: Session = Depends(get_db)):
     """Получить статистику системы"""
     try:
-        from app.models.database import PersonDB, PhotoDB
+        from app.models.database import Person as PersonDB, Photo as PhotoDB
 
         total_persons = db.query(PersonDB).count()
         active_photos = db.query(PhotoDB).filter(PhotoDB.is_active == True).count()
