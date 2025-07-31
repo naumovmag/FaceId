@@ -4,11 +4,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 import structlog
-from pathlib import Path
 
 from app.config.database import get_db
 from app.services.person_service import person_service
-from app.config.settings import settings
 
 logger = structlog.get_logger()
 
