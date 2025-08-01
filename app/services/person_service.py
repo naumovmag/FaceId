@@ -8,7 +8,7 @@ from app.models.database import Person as PersonDB, Photo as PhotoDB
 from app.models.person import Person, PersonCreate, PersonUpdate, PersonWithPhotos, Photo, IdentificationResult
 from app.services.face_service import face_service
 from app.config.settings import settings
-from app.utils.exceptions import PersonNotFoundError, DatabaseError
+from app.utils.exceptions import PersonNotFoundError, DatabaseError, FaceDetectionError
 
 logger = structlog.get_logger()
 
@@ -118,30 +118,34 @@ class PersonService:
             confidence: float = 0.0
     ) -> Optional[Photo]:
         """Добавить фотографию к человеку"""
-        try:
-            # Проверяем валидность эмбеддинга
-            if not embedding_vector or len(embedding_vector) != 512:
-                logger.error("Invalid embedding vector",
-                             embedding_size=len(embedding_vector) if embedding_vector else 0,
-                             expected_size=512)
-                raise DatabaseError("Некорректный вектор эмбеддинга")
+        # Проверяем валидность эмбеддинга до обращения к базе
+        if not embedding_vector or len(embedding_vector) != 512:
+            logger.error(
+                "Invalid embedding vector",
+                embedding_size=len(embedding_vector) if embedding_vector else 0,
+                expected_size=512,
+            )
+            raise FaceDetectionError("Некорректный вектор эмбеддинга")
 
+        try:
             # Конвертируем эмбеддинг в bytes для хранения в SQLite
             embedding_array = np.array(embedding_vector, dtype=np.float32)
             embedding_bytes = pickle.dumps(embedding_array)
 
-            logger.info("Saving photo with embedding",
-                        person_id=person_id,
-                        filename=filename,
-                        embedding_size=len(embedding_vector),
-                        confidence=confidence)
+            logger.info(
+                "Saving photo with embedding",
+                person_id=person_id,
+                filename=filename,
+                embedding_size=len(embedding_vector),
+                confidence=confidence,
+            )
 
             db_photo = PhotoDB(
                 person_id=person_id,
                 filename=filename,
                 file_path=file_path,
                 embedding_vector=embedding_bytes,
-                confidence=confidence
+                confidence=confidence,
             )
 
             db.add(db_photo)
@@ -150,11 +154,13 @@ class PersonService:
 
             # Проверяем, что данные сохранились
             saved_embedding = pickle.loads(db_photo.embedding_vector)
-            logger.info("Photo saved successfully",
-                        person_id=person_id,
-                        photo_id=db_photo.id,
-                        filename=filename,
-                        saved_embedding_size=len(saved_embedding))
+            logger.info(
+                "Photo saved successfully",
+                person_id=person_id,
+                photo_id=db_photo.id,
+                filename=filename,
+                saved_embedding_size=len(saved_embedding),
+            )
 
             return Photo.from_orm(db_photo)
 
