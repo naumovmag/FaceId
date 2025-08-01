@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pathlib import Path
 import structlog
 
 from app.config.database import get_db
@@ -197,14 +198,15 @@ async def upload_photo(
 
 
 @router.delete("/photos/{photo_id}")
-async def deactivate_photo(photo_id: int, db: Session = Depends(get_db)):
-    """Деактивировать фотографию"""
+async def delete_photo(photo_id: int, db: Session = Depends(get_db)):
+    """Удалить фотографию"""
     try:
-        deactivated = person_service.deactivate_photo(db, photo_id)
-        if not deactivated:
+        file_path = person_service.delete_photo(db, photo_id)
+        if not file_path:
             raise HTTPException(status_code=404, detail="Фотография не найдена")
 
-        return {"message": "Фотография деактивирована"}
+        await file_service.delete_file(str(Path(settings.upload_path) / file_path))
+        return {"message": "Фотография удалена"}
 
     except Exception as e:
         raise await handle_api_error(e)
