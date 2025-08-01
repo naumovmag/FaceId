@@ -15,6 +15,12 @@ router = APIRouter(tags=["web"])
 templates = Jinja2Templates(directory="templates")
 
 
+def require_login(request: Request) -> None:
+    """Ensure user is authenticated for protected pages."""
+    if not request.session.get("user_id"):
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
+
+
 @router.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
     """Главная страница - редирект на страницу идентификации"""
@@ -28,6 +34,7 @@ async def index_page(request: Request):
 @router.get("/upload", response_class=HTMLResponse)
 async def upload_page(request: Request, db: Session = Depends(get_db)):
     """Страница загрузки фотографий"""
+    require_login(request)
     try:
         # Получаем список всех людей для выбора
         persons = person_service.get_all_persons(db, limit=1000)
@@ -52,6 +59,7 @@ async def upload_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/identify", response_class=HTMLResponse)
 async def identify_page(request: Request, db: Session = Depends(get_db)):
     """Страница идентификации"""
+    require_login(request)
     try:
         persons = person_service.get_all_persons(db, limit=1000)
         persons_data = jsonable_encoder(persons)
@@ -74,6 +82,7 @@ async def persons_list_page(
         db: Session = Depends(get_db)
 ):
     """Страница списка всех людей"""
+    require_login(request)
     try:
         # Параметры пагинации
         page = max(page, 1)
@@ -130,6 +139,7 @@ async def person_detail_page(
         db: Session = Depends(get_db)
 ):
     """Страница детальной информации о человеке"""
+    require_login(request)
     try:
         person = person_service.get_person_with_photos(db, person_id)
         if not person:
@@ -173,6 +183,7 @@ async def person_detail_page(
 @router.get("/training", response_class=HTMLResponse)
 async def training_page(request: Request, db: Session = Depends(get_db)):
     """Страница управления обучением"""
+    require_login(request)
     try:
         # Импортируем модели локально, чтобы избежать проблем с импортом
         from app.models.database import Person as PersonDB, Photo as PhotoDB
@@ -249,6 +260,7 @@ async def results_page(
         db: Session = Depends(get_db)
 ):
     """Страница результатов идентификации"""
+    require_login(request)
     result_data = None
     if person_id:
         try:
