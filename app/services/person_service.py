@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 import structlog
 import numpy as np
 import pickle
+from pathlib import Path
+import shutil
 
 from app.models.database import Person as PersonDB, Photo as PhotoDB
 from app.models.person import Person, PersonCreate, PersonUpdate, PersonWithPhotos, Photo, IdentificationResult
@@ -97,12 +99,43 @@ class PersonService:
             if not db_person:
                 return False
 
+            photos = db.query(PhotoDB).filter(PhotoDB.person_id == person_id).all()
+            base_path = Path(settings.upload_path)
+
+            for photo in photos:
+                file_path = base_path / photo.file_path
+                try:
+                    if file_path.exists():
+                        file_path.unlink()
+                except Exception as e:
+                    db.rollback()
+                    logger.error(
+                        "Failed to delete photo file",
+                        error=str(e),
+                        file_path=str(file_path),
+                        photo_id=photo.id,
+                    )
+                    raise DatabaseError(f"Не удалось удалить файл фотографии: {str(e)}")
+
+            try:
+                shutil.rmtree(base_path / 'persons' / str(person_id), ignore_errors=True)
+            except Exception as e:
+                db.rollback()
+                logger.error(
+                    "Failed to delete person directory",
+                    error=str(e),
+                    person_id=person_id,
+                )
+                raise DatabaseError(f"Не удалось удалить каталог пользователя: {str(e)}")
+
             db.delete(db_person)
             db.commit()
 
             logger.info("Person deleted", person_id=person_id)
             return True
 
+        except DatabaseError:
+            raise
         except Exception as e:
             db.rollback()
             logger.error("Failed to delete person", error=str(e))
