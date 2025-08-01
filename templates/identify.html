@@ -241,7 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const result = await response.json();
 
-            if (response.ok) {
+            if (response.status === 422) {
+                alert('Лицо не найдено');
+            } else if (response.ok) {
                 showResults(result);
             } else {
                 throw new Error(result.detail?.error || 'Ошибка идентификации');

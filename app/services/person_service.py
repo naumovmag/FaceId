@@ -239,11 +239,19 @@ class PersonService:
 
     def identify_person(self, db: Session, image_path: str) -> Tuple[IdentificationResult, np.ndarray]:
         """Идентифицировать человека по фотографии и вернуть эмбеддинг"""
+        from app.utils.exceptions import FaceDetectionError
         try:
             logger.info("Starting person identification", image_path=image_path)
 
             # Получаем эмбеддинг из изображения
-            target_embedding, detection_confidence = face_service.get_face_embedding(image_path)
+            try:
+                target_embedding, detection_confidence = face_service.get_face_embedding(image_path)
+            except FaceDetectionError as e:
+                logger.error("Face detection failed", error=str(e), image_path=image_path)
+                raise
+            except Exception as e:
+                logger.error("Failed to get face embedding", error=str(e), image_path=image_path)
+                raise
 
             logger.info("Face embedding extracted",
                         confidence=detection_confidence,
@@ -308,6 +316,8 @@ class PersonService:
                 is_match=False
             ), target_embedding
 
+        except FaceDetectionError:
+            raise
         except Exception as e:
             logger.error("Failed to identify person", error=str(e), image_path=image_path)
             return IdentificationResult(
