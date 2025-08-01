@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -24,7 +24,14 @@ from app.utils.exceptions import (
 
 logger = structlog.get_logger()
 
-router = APIRouter(prefix="/api", tags=["api"])
+
+def require_user(request: Request) -> None:
+    """Ensure API requests are authenticated."""
+    if not request.session.get("user_id"):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+
+router = APIRouter(prefix="/api", tags=["api"], dependencies=[Depends(require_user)])
 
 
 async def handle_api_error(e: Exception) -> HTTPException:
