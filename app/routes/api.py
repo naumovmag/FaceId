@@ -214,8 +214,15 @@ async def deactivate_photo(photo_id: int, db: Session = Depends(get_db)):
 async def identify_person(
         file: UploadFile = File(...),
         person_id: Optional[int] = Form(None),
+        create_new: bool = Form(False),
         db: Session = Depends(get_db)):
-    """Идентифицировать человека по фотографии"""
+    """Идентифицировать человека по фотографии.
+
+    Параметры:
+        file: Загружаемое изображение.
+        person_id: ID человека для привязки фото, если лицо не распознано.
+        create_new: Создать нового человека, если совпадение не найдено.
+    """
     try:
         # Читаем файл
         file_data = await file.read()
@@ -239,11 +246,16 @@ async def identify_person(
             # Выполняем идентификацию и получаем эмбеддинг
             result, embedding = person_service.identify_person(db, file_info['file_path'])
 
+            # Убираем данные о человеке, если совпадение не найдено
+            if not result.is_match:
+                result.person_id = None
+                result.person_name = None
+
             # Определяем ID человека для сохранения
             target_person_id = result.person_id if result.is_match else person_id
 
-            # Если лицо не распознано и пользователь не указал ID, создаем нового
-            if not target_person_id:
+            # Создаем нового человека только при явном запросе
+            if create_new and not target_person_id:
                 new_person = person_service.create_person(
                     db, PersonCreate(name="Не задан")
                 )
