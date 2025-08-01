@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 import structlog
 from contextlib import asynccontextmanager
 
 from app.config.database import create_tables
 from app.config.settings import settings
 from app.services.face_service import face_service
-from app.routes import api, web
+from app.routes import api, web, auth, admin
 
 # Настройка логирования
 structlog.configure(
@@ -66,9 +67,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
 
+    # Сессии
+    app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+
     # Подключение маршрутов
     app.include_router(api.router)
     app.include_router(web.router)
+    app.include_router(auth.router)
+    app.include_router(admin.router)
 
     # Статические файлы
     app.mount("/static", StaticFiles(directory="static"), name="static")
