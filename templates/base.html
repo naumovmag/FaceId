@@ -55,6 +55,30 @@
                         </a>
                     </li>
                 </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if request.session.get('user_id') %}
+                        {% if request.session.get('is_admin') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'admin_users' %}active{% endif %}" href="/admin/users">
+                                <i class="bi bi-people-fill me-1"></i>Пользователи
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <span class="navbar-text me-2">{{ request.session.get('username') }}</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">Выход</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'login' %}active{% endif %}" href="/login">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'register' %}active{% endif %}" href="/register">Регистрация</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>
