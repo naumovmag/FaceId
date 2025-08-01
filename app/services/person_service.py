@@ -169,23 +169,24 @@ class PersonService:
             logger.error("Failed to add photo", error=str(e), person_id=person_id)
             raise DatabaseError(f"Не удалось добавить фотографию: {str(e)}")
 
-    def deactivate_photo(self, db: Session, photo_id: int) -> bool:
-        """Деактивировать фотографию"""
+    def delete_photo(self, db: Session, photo_id: int) -> Optional[str]:
+        """Удалить фотографию из базы данных и вернуть путь к файлу"""
         try:
             db_photo = db.query(PhotoDB).filter(PhotoDB.id == photo_id).first()
             if not db_photo:
-                return False
+                return None
 
-            db_photo.is_active = False
+            file_path = db_photo.file_path
+            db.delete(db_photo)
             db.commit()
 
-            logger.info("Photo deactivated", photo_id=photo_id)
-            return True
+            logger.info("Photo deleted", photo_id=photo_id)
+            return file_path
 
         except Exception as e:
             db.rollback()
-            logger.error("Failed to deactivate photo", error=str(e))
-            raise DatabaseError(f"Не удалось деактивировать фотографию: {str(e)}")
+            logger.error("Failed to delete photo", error=str(e))
+            raise DatabaseError(f"Не удалось удалить фотографию: {str(e)}")
 
     def get_all_active_embeddings(self, db: Session) -> List[Dict[str, Any]]:
         """Получить все активные эмбеддинги для поиска"""
