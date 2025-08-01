@@ -38,10 +38,18 @@
         padding: 1rem;
         transform: translateY(100%);
         transition: transform 0.3s ease;
+        z-index: 1;
     }
 
     .photo-item:hover .photo-overlay {
         transform: translateY(0);
+    }
+
+    .delete-button {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 2;
     }
 </style>
 {% endblock %}
@@ -138,18 +146,14 @@
                     {% for photo in person.photos %}
                     <div class="photo-item">
                         <img src="/uploads/{{ photo.file_path }}" alt="Фото {{ person.name }}" loading="lazy">
+                        <button class="btn btn-sm btn-danger delete-button"
+                                onclick="deletePhoto({{ photo.id }}, '{{ photo.filename }}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
                         <div class="photo-overlay">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <small class="d-block">{{ photo.filename }}</small>
-                                    <small class="d-block">Точность: {{ "%.1f"|format(photo.confidence * 100) }}%</small>
-                                    <small class="d-block">{{ photo.created_at.strftime('%d.%m.%Y') }}</small>
-                                </div>
-                                <button class="btn btn-sm btn-outline-light"
-                                        onclick="deletePhoto({{ photo.id }}, '{{ photo.filename }}')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
+                            <small class="d-block">{{ photo.filename }}</small>
+                            <small class="d-block">Точность: {{ "%.1f"|format(photo.confidence * 100) }}%</small>
+                            <small class="d-block">{{ photo.created_at.strftime('%d.%m.%Y') }}</small>
                         </div>
                     </div>
                     {% endfor %}
