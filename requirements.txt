@@ -9,6 +9,7 @@ alembic==1.12.1
 # Core dependencies
 setuptools>=65.0.0
 wheel>=0.37.0
+itsdangerous==2.1.2
 
 # Numerical computing
 numpy>=1.21.0,<2.0.0
